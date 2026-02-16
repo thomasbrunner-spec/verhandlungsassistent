@@ -1,0 +1,15 @@
+services:
+  verhandlungsassistent:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SESSION_SECRET=${SESSION_SECRET:-verhandlung-prod-secret-change-me}
+      - DB_PATH=/app/data/database.sqlite
+    volumes:
+      - sqlite-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:

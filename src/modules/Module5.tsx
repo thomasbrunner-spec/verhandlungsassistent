@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Spinner, Btn, TextArea, Markdown, LIFOBadge } from "@/components/UIKit";
+import { Spinner, Btn, TextArea, Markdown, LIFOBadge, ExportBar } from "@/components/UIKit";
 import { LIFO } from "@/data/lifo";
 import { PROMPTS } from "@/data/prompts";
+import { C } from "@/data/colors";
 
 interface Props {
   companyData: Record<string, string>;
@@ -73,7 +74,7 @@ export default function Module5({ companyData, supplierData, lifoData, objection
   if (!mode) {
     return (
       <div>
-        <p style={{ fontSize: "13px", marginBottom: "24px", color: "#8892b0" }}>
+        <p style={{ fontSize: "13px", marginBottom: "24px", color: C.textSecondary }}>
           Bereiten Sie sich auf Einwände vor. Wählen Sie Ihren Ansatz:
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
@@ -90,16 +91,16 @@ export default function Module5({ companyData, supplierData, lifoData, objection
                 cursor: "pointer",
                 textAlign: "left",
                 transition: "border-color 0.3s ease",
-                background: "#16162a",
-                border: "2px solid #2a2a4a",
+                background: C.bgCard,
+                border: `2px solid ${C.border}`,
                 fontFamily: "inherit"
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#e94560")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#2a2a4a")}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = C.accent)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}
             >
               <span style={{ fontSize: "28px", display: "block", marginBottom: "12px" }}>{icon}</span>
-              <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#ccd6f6" }}>{title}</h3>
-              <p style={{ fontSize: "12px", lineHeight: "1.5", color: "#6b7394" }}>{desc}</p>
+              <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: C.textPrimary }}>{title}</h3>
+              <p style={{ fontSize: "12px", lineHeight: "1.5", color: C.textMuted }}>{desc}</p>
             </button>
           ))}
         </div>
@@ -117,7 +118,7 @@ export default function Module5({ companyData, supplierData, lifoData, objection
           fontSize: "12px",
           cursor: "pointer",
           marginBottom: "16px",
-          color: "#4a4a6a",
+          color: C.textDim,
           fontFamily: "inherit"
         }}
       >
@@ -126,8 +127,8 @@ export default function Module5({ companyData, supplierData, lifoData, objection
 
       {mode === "single" && (
         <div>
-          <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#ccd6f6" }}>Konkreten Einwand analysieren</h3>
-          <p style={{ fontSize: "13px", marginBottom: "16px", color: "#8892b0" }}>Geben Sie den erwarteten Einwand ein.</p>
+          <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: C.textPrimary }}>Konkreten Einwand analysieren</h3>
+          <p style={{ fontSize: "13px", marginBottom: "16px", color: C.textSecondary }}>Geben Sie den erwarteten Einwand ein.</p>
           <TextArea value={customObj} onChange={setCustomObj} placeholder='z.B. "Die Rohstoffpreise sind um 15% gestiegen..."' rows={4} />
           <div style={{ marginTop: "14px" }}>
             <Btn onClick={runSingle} disabled={!customObj.trim() || loading}>
@@ -139,8 +140,8 @@ export default function Module5({ companyData, supplierData, lifoData, objection
 
       {mode === "auto" && (
         <div>
-          <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#ccd6f6" }}>KI-generierte Einwandanalyse</h3>
-          <p style={{ fontSize: "13px", marginBottom: "16px", color: "#8892b0" }}>
+          <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: C.textPrimary }}>KI-generierte Einwandanalyse</h3>
+          <p style={{ fontSize: "13px", marginBottom: "16px", color: C.textSecondary }}>
             KI antizipiert Einwände basierend auf allen Daten.
           </p>
           {lifoData.style && (
@@ -156,8 +157,9 @@ export default function Module5({ companyData, supplierData, lifoData, objection
 
       {loading && <Spinner text="Analysiert Einwände..." />}
       {analysis && !loading && (
-        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: "#16162a", border: "1px solid #2a2a4a" }}>
+        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
           <Markdown text={analysis} />
+          <ExportBar text={analysis} title="Einwandbehandlung" />
         </div>
       )}
     </div>

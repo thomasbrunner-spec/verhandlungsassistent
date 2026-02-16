@@ -14,11 +14,19 @@ export async function getDb() {
   const initSqlJs = require("sql.js/dist/sql-asm.js");
   const SQL = await initSqlJs();
 
+  // Ensure directory exists
+  const dir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
   if (fs.existsSync(DB_PATH)) {
     const buffer = fs.readFileSync(DB_PATH);
     db = new SQL.Database(buffer);
+    console.log(`[DB] Loaded existing database from ${DB_PATH}`);
   } else {
     db = new SQL.Database();
+    console.log(`[DB] Created new database at ${DB_PATH}`);
   }
 
   // Create tables
@@ -49,6 +57,35 @@ export async function getDb() {
       user_id TEXT NOT NULL,
       name TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT DEFAULT (datetime('now', '+30 days')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS company_profiles (
+      id TEXT PRIMARY KEY,
+      user_id TEXT UNIQUE NOT NULL,
+      company_name TEXT,
+      industry TEXT,
+      website TEXT,
+      employees TEXT,
+      revenue TEXT,
+      position TEXT,
+      strengths TEXT,
+      description TEXT,
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )

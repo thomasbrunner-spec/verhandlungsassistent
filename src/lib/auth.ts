@@ -3,11 +3,6 @@ import { getDb, saveDb } from "./db";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "default-secret";
-
-// Simple session store (in-memory for now, persisted via cookie)
-const sessions: Map<string, { userId: string; email: string; name: string }> = new Map();
-
 export async function register(email: string, password: string, name: string) {
   const db = await getDb();
 
@@ -19,10 +14,10 @@ export async function register(email: string, password: string, name: string) {
   const id = uuidv4();
   const hash = bcrypt.hashSync(password, 10);
   db.run("INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)", [id, email, hash, name]);
-  saveDb();
 
   const sessionId = uuidv4();
-  sessions.set(sessionId, { userId: id, email, name });
+  db.run("INSERT INTO sessions (id, user_id, email, name) VALUES (?, ?, ?, ?)", [sessionId, id, email, name]);
+  saveDb();
 
   return { sessionId, user: { id, email, name } };
 }
@@ -42,7 +37,8 @@ export async function login(email: string, password: string) {
   }
 
   const sessionId = uuidv4();
-  sessions.set(sessionId, { userId: id as string, email: userEmail as string, name: name as string });
+  db.run("INSERT INTO sessions (id, user_id, email, name) VALUES (?, ?, ?, ?)", [sessionId, id, userEmail, name]);
+  saveDb();
 
   return { sessionId, user: { id, email: userEmail, name } };
 }
@@ -51,13 +47,24 @@ export async function getSession() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session")?.value;
   if (!sessionId) return null;
-  return sessions.get(sessionId) || null;
+
+  const db = await getDb();
+  const result = db.exec(
+    "SELECT user_id, email, name FROM sessions WHERE id = ? AND expires_at > datetime('now')",
+    [sessionId]
+  );
+
+  if (!result.length || !result[0].values.length) return null;
+  const [userId, email, name] = result[0].values[0] as string[];
+  return { userId, email, name };
 }
 
 export async function logout() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session")?.value;
   if (sessionId) {
-    sessions.delete(sessionId);
+    const db = await getDb();
+    db.run("DELETE FROM sessions WHERE id = ?", [sessionId]);
+    saveDb();
   }
 }

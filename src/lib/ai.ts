@@ -1,4 +1,52 @@
-export async function askAI(systemPrompt: string, userMessage: string, knowledgeBase: string = "") {
+export const AVAILABLE_MODELS = [
+  { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", desc: "Schnellstes Modell, günstig (empfohlen)" },
+  { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", desc: "Schnell & leistungsstark" },
+  { id: "claude-opus-4-20250514", name: "Claude Opus 4", desc: "Stärkstes Modell, langsamer" },
+];
+
+export const DEFAULT_MODEL = "claude-3-5-haiku-20241022";
+
+const MAX_RETRIES = 3;
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      // Rate limited - check retry-after header or use exponential backoff
+      const retryAfter = response.headers.get("retry-after");
+      const waitMs = retryAfter
+        ? parseInt(retryAfter, 10) * 1000
+        : Math.min(1000 * Math.pow(2, attempt), 30000); // 1s, 2s, 4s... max 30s
+
+      if (attempt < retries) {
+        console.log(`Rate limited (429). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
+        await sleep(waitMs);
+        continue;
+      }
+    }
+
+    if (response.status === 529) {
+      // API overloaded
+      const waitMs = Math.min(2000 * Math.pow(2, attempt), 30000);
+      if (attempt < retries) {
+        console.log(`API überlastet (529). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
+        await sleep(waitMs);
+        continue;
+      }
+    }
+
+    return response;
+  }
+
+  throw new Error("Maximale Anzahl an Wiederholungsversuchen erreicht.");
+}
+
+export async function askAI(systemPrompt: string, userMessage: string, knowledgeBase: string = "", model: string = DEFAULT_MODEL) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY nicht konfiguriert");
 
@@ -6,7 +54,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
     ? `${systemPrompt}\n\n<expertenwissen>\n${knowledgeBase}\n</expertenwissen>`
     : systemPrompt;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -14,7 +62,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model,
       max_tokens: 4000,
       system,
       messages: [{ role: "user", content: userMessage }],
@@ -24,6 +72,9 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
 
   if (!response.ok) {
     const err = await response.text();
+    if (response.status === 429) {
+      throw new Error("Rate-Limit erreicht. Bitte warten Sie einen Moment und versuchen Sie es erneut.");
+    }
     throw new Error(`API-Fehler: ${response.status} - ${err}`);
   }
 
@@ -34,7 +85,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
     .join("\n");
 }
 
-export async function askAIChat(systemPrompt: string, messages: { role: string; content: string }[], knowledgeBase: string = "") {
+export async function askAIChat(systemPrompt: string, messages: { role: string; content: string }[], knowledgeBase: string = "", model: string = DEFAULT_MODEL) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY nicht konfiguriert");
 
@@ -42,7 +93,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
     ? `${systemPrompt}\n\n<expertenwissen>\n${knowledgeBase}\n</expertenwissen>`
     : systemPrompt;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +101,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model,
       max_tokens: 4000,
       system,
       messages,
@@ -59,6 +110,9 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
 
   if (!response.ok) {
     const err = await response.text();
+    if (response.status === 429) {
+      throw new Error("Rate-Limit erreicht. Bitte warten Sie einen Moment und versuchen Sie es erneut.");
+    }
     throw new Error(`API-Fehler: ${response.status} - ${err}`);
   }
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Spinner, Btn, TextArea, Markdown } from "@/components/UIKit";
+import { Spinner, Btn, TextArea, Markdown, ExportBar } from "@/components/UIKit";
 import LIFOCard from "@/components/LIFOCard";
 import { PROMPTS } from "@/data/prompts";
+import { C } from "@/data/colors";
 
 interface LIFOData {
   behaviors: string;
@@ -58,19 +59,19 @@ export default function Module3({ data, onChange }: Props) {
 
   return (
     <div>
-      <p style={{ fontSize: "13px", marginBottom: "6px", color: "#8892b0" }}>
+      <p style={{ fontSize: "13px", marginBottom: "6px", color: C.textSecondary }}>
         Beschreiben Sie das Verhalten Ihres Gesprächspartners.
       </p>
       <div style={{
         borderRadius: "8px",
         padding: "14px",
         marginBottom: "16px",
-        background: "#1a1a2e",
-        border: "1px solid #2a2a4a"
+        background: C.bgInput,
+        border: `1px solid ${C.border}`
       }}>
-        <p style={{ fontSize: "11px", marginBottom: "6px", color: "#4a4a6a" }}>Leitfragen:</p>
+        <p style={{ fontSize: "11px", marginBottom: "6px", color: C.textDim }}>Leitfragen:</p>
         {HINTS.map((h, i) => (
-          <p key={i} style={{ fontSize: "11px", lineHeight: "1.5", color: "#6b7394" }}>→ {h}</p>
+          <p key={i} style={{ fontSize: "11px", lineHeight: "1.5", color: C.textMuted }}>→ {h}</p>
         ))}
       </div>
       <TextArea value={behaviors} onChange={setBehaviors} placeholder="Typisches Verhalten..." rows={6} />
@@ -82,8 +83,9 @@ export default function Module3({ data, onChange }: Props) {
       {loading && <Spinner text="Analysiert Verhaltensmuster..." />}
       {style && !loading && <LIFOCard style={style} />}
       {analysis && !loading && (
-        <div style={{ marginTop: "14px", borderRadius: "10px", padding: "20px", background: "#16162a", border: "1px solid #2a2a4a" }}>
+        <div style={{ marginTop: "14px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
           <Markdown text={analysis.replace(/^\[(SH|CT|CH|AD)\]\s*/, "")} />
+          <ExportBar text={analysis.replace(/^\[(SH|CT|CH|AD)\]\s*/, "")} title="LIFO-Analyse" />
         </div>
       )}
     </div>

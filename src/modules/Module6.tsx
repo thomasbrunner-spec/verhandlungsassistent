@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Spinner, Btn, Markdown } from "@/components/UIKit";
+import { Spinner, Btn, Markdown, ExportBar } from "@/components/UIKit";
 import LIFOCard from "@/components/LIFOCard";
 import { LIFO } from "@/data/lifo";
 import { PROMPTS } from "@/data/prompts";
+import { C } from "@/data/colors";
 
 interface Msg { role: "user" | "supplier"; text: string; }
 
@@ -104,7 +105,7 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
   if (!started) {
     return (
       <div>
-        <p style={{ fontSize: "13px", marginBottom: "14px", color: "#8892b0" }}>
+        <p style={{ fontSize: "13px", marginBottom: "14px", color: C.textSecondary }}>
           Simulation mit KI als Lieferant{lifoData.style ? ` (${LIFO[lifoData.style]?.name})` : ""}. Anschließend Feedback.
         </p>
         {lifoData.style && <LIFOCard style={lifoData.style} />}
@@ -121,8 +122,8 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
         borderRadius: "10px",
         marginBottom: "14px",
         overflowY: "auto",
-        background: "#0d0d1a",
-        border: "1px solid #2a2a4a",
+        background: C.bgMain,
+        border: `1px solid ${C.border}`,
         maxHeight: 480
       }}>
         <div style={{ padding: "16px" }}>
@@ -140,15 +141,15 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
                   paddingTop: "10px",
                   paddingBottom: "10px",
                   borderRadius: "10px",
-                  background: m.role === "user" ? "#e9456018" : "#1a1a2e",
-                  border: `1px solid ${m.role === "user" ? "#e9456030" : "#2a2a4a"}`
+                  background: m.role === "user" ? C.accentBg : C.bgInput,
+                  border: `1px solid ${m.role === "user" ? C.accentBorder : C.border}`
                 }}
               >
                 <p style={{
                   fontSize: "10px",
                   fontWeight: "600",
                   marginBottom: "4px",
-                  color: m.role === "user" ? "#e94560" : "#6b7394"
+                  color: m.role === "user" ? C.accent : C.textMuted
                 }}>
                   {m.role === "user" ? "Sie (Einkäufer)" : `Lieferant${lifoData.style ? ` [${lifoData.style}]` : ""}`}
                 </p>
@@ -156,7 +157,7 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
                   fontSize: "13px",
                   lineHeight: "1.5",
                   whiteSpace: "pre-wrap",
-                  color: "#ccd6f6"
+                  color: C.textPrimary
                 }}>{m.text}</p>
               </div>
             </div>
@@ -184,9 +185,9 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
               fontSize: "13px",
               resize: "none",
               outline: "none",
-              background: "#1a1a2e",
-              border: "1px solid #2a2a4a",
-              color: "#ccd6f6",
+              background: C.bgInput,
+              border: `1px solid ${C.border}`,
+              color: C.textPrimary,
               fontFamily: "inherit"
             }}
           />
@@ -200,9 +201,10 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
       )}
 
       {feedback && (
-        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: "#16162a", border: "2px solid #e94560" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "14px", color: "#e94560" }}>Verhandlungsfeedback</h3>
+        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `2px solid ${C.accent}` }}>
+          <h3 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "14px", color: C.accent }}>Verhandlungsfeedback</h3>
           <Markdown text={feedback} />
+          <ExportBar text={feedback} title="Verhandlungssimulation" />
         </div>
       )}
     </div>

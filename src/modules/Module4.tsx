@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Spinner, Btn, Markdown, LIFOBadge } from "@/components/UIKit";
+import { Spinner, Btn, Markdown, LIFOBadge, ExportBar } from "@/components/UIKit";
 import { LIFO } from "@/data/lifo";
 import { PROMPTS } from "@/data/prompts";
+import { C } from "@/data/colors";
 
 interface Props {
   companyData: Record<string, string>;
@@ -55,7 +56,7 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
 
   return (
     <div>
-      <p style={{ fontSize: "13px", marginBottom: "14px", color: "#8892b0" }}>
+      <p style={{ fontSize: "13px", marginBottom: "14px", color: C.textSecondary }}>
         Harvard-Strategie mit Agenda, Drehbuch und LIFO-Formulierungen.
       </p>
 
@@ -75,10 +76,10 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
         borderRadius: "8px",
         padding: "14px",
         marginBottom: "16px",
-        background: "#1a1a2e",
-        border: "1px solid #2a2a4a"
+        background: C.bgInput,
+        border: `1px solid ${C.border}`
       }}>
-        <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px", color: "#ccd6f6" }}>Datenbasis:</p>
+        <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px", color: C.textPrimary }}>Datenbasis:</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {checks.map((c) => (
             <span
@@ -90,9 +91,9 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
                 paddingBottom: "2px",
                 borderRadius: "9999px",
                 fontSize: "11px",
-                background: c.ok ? "#2E7D3215" : "#2a2a4a",
-                color: c.ok ? "#4CAF50" : "#4a4a6a",
-                border: `1px solid ${c.ok ? "#2E7D3230" : "#2a2a4a"}`
+                background: c.ok ? "#2E7D3215" : C.borderLight,
+                color: c.ok ? "#4CAF50" : C.textDim,
+                border: `1px solid ${c.ok ? "#2E7D3230" : C.borderLight}`
               }}
             >
               {c.ok ? "✓" : "○"} {c.l}
@@ -111,8 +112,9 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
       </Btn>
       {loading && <Spinner text="Erstellt Harvard-Strategie mit Agenda..." />}
       {strategy && !loading && (
-        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: "#16162a", border: "1px solid #2a2a4a" }}>
+        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
           <Markdown text={strategy} />
+          <ExportBar text={strategy} title="Verhandlungsstrategie" />
         </div>
       )}
     </div>

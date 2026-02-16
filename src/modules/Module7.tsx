@@ -1,6 +1,7 @@
 "use client";
 
-import { Markdown, LIFOBadge } from "@/components/UIKit";
+import { Markdown, LIFOBadge, ExportBar } from "@/components/UIKit";
+import { C } from "@/data/colors";
 
 interface Props {
   companyData: Record<string, string>;
@@ -23,18 +24,18 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
   if (!sections.length) {
     return (
       <div>
-        <p style={{ fontSize: "13px", marginBottom: "16px", color: "#8892b0" }}>
+        <p style={{ fontSize: "13px", marginBottom: "16px", color: C.textSecondary }}>
           Gesamtübersicht aller Ergebnisse als Verhandlungs-Briefing.
         </p>
         <div style={{
           borderRadius: "10px",
           padding: "32px",
           textAlign: "center",
-          background: "#16162a",
-          border: "1px solid #2a2a4a"
+          background: C.bgCard,
+          border: `1px solid ${C.border}`
         }}>
           <p style={{ fontSize: "36px", marginBottom: "12px" }}>📭</p>
-          <p style={{ fontSize: "13px", color: "#6b7394" }}>Noch keine Ergebnisse. Arbeiten Sie Module 1-5 durch.</p>
+          <p style={{ fontSize: "13px", color: C.textMuted }}>Noch keine Ergebnisse. Arbeiten Sie Module 1-5 durch.</p>
         </div>
       </div>
     );
@@ -42,7 +43,7 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
 
   return (
     <div>
-      <p style={{ fontSize: "13px", marginBottom: "8px", color: "#8892b0" }}>Ihr Verhandlungs-Briefing. Ideal vor dem Termin.</p>
+      <p style={{ fontSize: "13px", marginBottom: "8px", color: C.textSecondary }}>Ihr Verhandlungs-Briefing. Ideal vor dem Termin.</p>
       {lifoData.style && (
         <div style={{ marginBottom: "16px" }}>
           <LIFOBadge style={lifoData.style} />
@@ -65,12 +66,12 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
             borderRadius: "8px",
             padding: "14px",
             textAlign: "center",
-            background: "#16162a",
-            border: "1px solid #2a2a4a"
+            background: C.bgCard,
+            border: `1px solid ${C.border}`
           }}>
             <p style={{ fontSize: "20px", marginBottom: "4px" }}>{s.i}</p>
-            <p style={{ fontSize: "13px", fontWeight: "600", color: "#ccd6f6" }}>{s.v}</p>
-            <p style={{ fontSize: "10px", color: "#4a4a6a" }}>{s.l}</p>
+            <p style={{ fontSize: "13px", fontWeight: "600", color: C.textPrimary }}>{s.v}</p>
+            <p style={{ fontSize: "10px", color: C.textDim }}>{s.l}</p>
           </div>
         ))}
       </div>
@@ -87,9 +88,9 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: "600",
-              background: "#16162a",
-              border: "1px solid #2a2a4a",
-              color: "#ccd6f6",
+              background: C.bgCard,
+              border: `1px solid ${C.border}`,
+              color: C.textPrimary,
               listStyle: "none"
             }}
           >
@@ -97,8 +98,8 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
           </summary>
           <div style={{
             padding: "20px",
-            background: "#12122a",
-            border: "1px solid #2a2a4a",
+            background: C.bgDeep,
+            border: `1px solid ${C.border}`,
             borderTop: "none",
             borderRadius: "0 0 8px 8px"
           }}>
@@ -106,6 +107,15 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
           </div>
         </details>
       ))}
+
+      {sections.length > 0 && (
+        <div style={{ marginTop: "20px" }}>
+          <ExportBar
+            text={sections.map(s => `${s.t}\n\n${s.c}`).join("\n\n---\n\n")}
+            title="Verhandlungsbriefing"
+          />
+        </div>
+      )}
     </div>
   );
 }

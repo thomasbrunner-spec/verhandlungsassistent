@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Spinner, Btn, Input, Markdown } from "@/components/UIKit";
+import { Spinner, Btn, Input, Markdown, ExportBar } from "@/components/UIKit";
 import { PROMPTS } from "@/data/prompts";
+import { C } from "@/data/colors";
 
 interface SupplierData {
   name: string;
@@ -52,7 +53,7 @@ export default function Module2({ data, onChange, companyData }: Props) {
 
   return (
     <div>
-      <p style={{ fontSize: "13px", marginBottom: "16px", color: "#8892b0" }}>
+      <p style={{ fontSize: "13px", marginBottom: "16px", color: C.textSecondary }}>
         KI recherchiert Marktposition, Finanzdaten, Entwicklungen und Wettbewerber.
       </p>
       <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
@@ -68,8 +69,9 @@ export default function Module2({ data, onChange, companyData }: Props) {
       </Btn>
       {loading && <Spinner text="KI recherchiert Marktdaten..." />}
       {analysis && !loading && (
-        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: "#16162a", border: "1px solid #2a2a4a" }}>
+        <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
           <Markdown text={analysis} />
+          <ExportBar text={analysis} title="Lieferantenanalyse" />
         </div>
       )}
     </div>
