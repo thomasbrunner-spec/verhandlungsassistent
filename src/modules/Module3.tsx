@@ -46,7 +46,7 @@ export default function Module3({ data, onChange }: Props) {
       const d = await r.json();
       if (d.error) throw new Error(d.error);
       setAnalysis(d.response);
-      const m = d.response.match(/^\[(SH|CT|CH|AD)\]/);
+      const m = d.response.match(/^\[(UH|BÜ|AH|BF)\]/);
       const detected = m ? m[1] : "";
       setStyle(detected);
       onChange({ behaviors, analysis: d.response, style: detected });
@@ -84,8 +84,8 @@ export default function Module3({ data, onChange }: Props) {
       {style && !loading && <LIFOCard style={style} />}
       {analysis && !loading && (
         <div style={{ marginTop: "14px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
-          <Markdown text={analysis.replace(/^\[(SH|CT|CH|AD)\]\s*/, "")} />
-          <ExportBar text={analysis.replace(/^\[(SH|CT|CH|AD)\]\s*/, "")} title="LIFO-Analyse" />
+          <Markdown text={analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")} />
+          <ExportBar text={analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")} title="LIFO-Analyse" />
         </div>
       )}
     </div>

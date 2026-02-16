@@ -11,8 +11,8 @@ interface Msg { role: "user" | "supplier"; text: string; }
 
 interface Props {
   companyData: Record<string, string>;
-  supplierData: { name: string };
-  lifoData: { style: string };
+  supplierData: { name: string; analysis: string };
+  lifoData: { style: string; analysis: string };
 }
 
 export default function Module6({ companyData, supplierData, lifoData }: Props) {
@@ -29,9 +29,17 @@ export default function Module6({ companyData, supplierData, lifoData }: Props) 
   }, [msgs]);
 
   const buildSysPrompt = (isFeedback = false) => {
-    if (isFeedback) return PROMPTS.feedback.text;
+    const ctx = Object.entries(companyData)
+      .filter(([, v]) => v?.trim())
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("\n");
     const lifoStyle = lifoData.style && LIFO[lifoData.style];
-    return `${PROMPTS.sim.text}\nLieferant: "${supplierData.name || "?"}"\n${lifoStyle ? `LIFO: ${lifoStyle.name}. ${lifoStyle.traits}. Unter Druck: ${lifoStyle.underPressure}` : ""}${companyData.volume ? `\nVolumen: ${companyData.volume}` : ""}${companyData.currentTerms ? `\nKonditionen: ${companyData.currentTerms}` : ""}`;
+
+    if (isFeedback) {
+      return `${PROMPTS.feedback.text}\n\n=== KONTEXT ===\nEigenes Unternehmen:\n${ctx || "k.A."}\nLieferant: ${supplierData.name || "k.A."}\n${lifoStyle ? `LIFO-Stil: ${lifoStyle.name}\nMerkmale: ${lifoStyle.traits}\nUnter Druck: ${lifoStyle.underPressure}` : ""}`;
+    }
+
+    return `${PROMPTS.sim.text}\n\n=== DEIN UNTERNEHMEN (Lieferant) ===\nName: "${supplierData.name || "?"}"\n${supplierData.analysis ? `Profil:\n${supplierData.analysis.substring(0, 1500)}` : ""}\n\n=== EINKÄUFER-UNTERNEHMEN ===\n${ctx || "k.A."}\n\n=== DEIN LIFO-STIL ===\n${lifoStyle ? `Stil: ${lifoStyle.name}\nMerkmale: ${lifoStyle.traits}\nAnsprache: ${lifoStyle.approach}\nUnter Druck: ${lifoStyle.underPressure}\n\nVERHALTE DICH KONSEQUENT nach diesem Stil! Zeige die typischen Merkmale in JEDER Antwort.` : "Kein LIFO-Stil definiert — verhalte dich professionell-fordernd."}`;
   };
 
   const start = async () => {

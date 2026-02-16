@@ -8,8 +8,8 @@ import { C } from "@/data/colors";
 
 interface Props {
   companyData: Record<string, string>;
-  supplierData: { name: string; analysis: string };
-  lifoData: { style: string };
+  supplierData: { name: string; industry: string; analysis: string };
+  lifoData: { style: string; analysis: string };
   strategy: string;
   onStrategyChange: (s: string) => void;
 }
@@ -35,7 +35,7 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemPrompt: PROMPTS.strategy.text,
-          userMessage: `UNTERNEHMEN:\n${ctx || "k.A."}\n\nLIEFERANT: ${supplierData.name || "k.A."}\n${supplierData.analysis ? "Analyse liegt vor." : ""}${lb}\n\nErstelle DETAILLIERTE AGENDA mit Zeitblöcken. Hebe LIFO-Besonderheiten deutlich hervor.`,
+          userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx || "k.A."}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Lieferantenanalyse:\n${supplierData.analysis}` : "Keine Analyse vorhanden."}\n\n=== LIFO-PROFIL DES GESPRÄCHSPARTNERS ===${lb}\n${lifoData.analysis ? `\nDetaillierte LIFO-Analyse:\n${lifoData.analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")}` : ""}\n\nErstelle ein VOLLSTÄNDIGES Verhandlungsdrehbuch mit detaillierter Agenda und wortwörtlichen Formulierungen. Beziehe dich auf ALLE oben genannten konkreten Daten.`,
         }),
       });
       const d = await r.json();

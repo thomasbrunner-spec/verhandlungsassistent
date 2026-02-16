@@ -8,8 +8,8 @@ import { C } from "@/data/colors";
 
 interface Props {
   companyData: Record<string, string>;
-  supplierData: { name: string };
-  lifoData: { style: string };
+  supplierData: { name: string; analysis: string };
+  lifoData: { style: string; analysis: string };
   objections: string;
   onObjectionsChange: (o: string) => void;
 }
@@ -34,7 +34,7 @@ export default function Module5({ companyData, supplierData, lifoData, objection
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemPrompt: PROMPTS.objections.text,
-          userMessage: `Kontext:\n${ctx}\nLieferant: ${supplierData.name || "k.A."}\n${li}\n\nAntizipiere 6-8 Einwände.`,
+          userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Analyse:\n${supplierData.analysis}` : "Keine Analyse."}\n\n=== LIFO-PROFIL ===\n${li}\n${lifoData.analysis ? `Analyse: ${lifoData.analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "").substring(0, 500)}` : ""}\n\nAntizipiere 6-8 KONKRETE Einwände, die dieser spezifische Lieferant in dieser Situation bringen wird.`,
         }),
       });
       const d = await r.json();
@@ -57,7 +57,7 @@ export default function Module5({ companyData, supplierData, lifoData, objection
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemPrompt: PROMPTS.singleObj.text,
-          userMessage: `Kontext:\n${ctx}\nLieferant: ${supplierData.name || "k.A."}\n${li}\n\nEinwand: "${customObj}"`,
+          userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Analyse:\n${supplierData.analysis.substring(0, 800)}` : ""}\n\n=== LIFO-PROFIL ===\n${li}\n\nEinwand: "${customObj}"`,
         }),
       });
       const d = await r.json();

@@ -17,7 +17,7 @@ export default function Module7({ companyData, supplierData, lifoData, strategy,
 
   if (ce.length) sections.push({ t: "🏢 Unternehmensprofil", c: ce.map(([k, v]) => `**${k}**: ${v}`).join("\n") });
   if (supplierData.analysis) sections.push({ t: `🔍 Lieferantenanalyse – ${supplierData.name || ""}`, c: supplierData.analysis });
-  if (lifoData.style) sections.push({ t: "🎯 LIFO-Analyse", c: lifoData.analysis?.replace(/^\[(SH|CT|CH|AD)\]\s*/, "") || "" });
+  if (lifoData.style) sections.push({ t: "🎯 LIFO-Analyse", c: lifoData.analysis?.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "") || "" });
   if (strategy) sections.push({ t: "📋 Verhandlungsstrategie", c: strategy });
   if (objections) sections.push({ t: "🛡 Einwandbehandlung", c: objections });
 

@@ -167,10 +167,10 @@ ${text.split("\n").map(l => {
 
 export function LIFOBadge({ style }: { style: string }) {
   const LC: Record<string, { color: string; bg: string; name: string }> = {
-    SH: { color: "#2E7D32", bg: "#2E7D3212", name: "Unterstützend/Hergebend (SH)" },
-    CT: { color: "#C62828", bg: "#C6282812", name: "Bestimmend/Übernehmend (CT)" },
-    CH: { color: "#1565C0", bg: "#1565C012", name: "Bewahrend/Festhaltend (CH)" },
-    AD: { color: "#F57F17", bg: "#F57F1712", name: "Anpassend/Harmonisierend (AD)" },
+    UH: { color: "#1565C0", bg: "#1565C012", name: "Unterstützend/Hergebend (UH)" },
+    "BÜ": { color: "#C62828", bg: "#C6282812", name: "Bestimmend/Übernehmend (BÜ)" },
+    AH: { color: "#F57F17", bg: "#F57F1712", name: "Anpassend/Harmonisierend (AH)" },
+    BF: { color: "#2E7D32", bg: "#2E7D3212", name: "Bewahrend/Festhaltend (BF)" },
   };
   const s = LC[style]; if (!s) return null;
   return (
