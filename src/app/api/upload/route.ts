@@ -21,10 +21,7 @@ export async function POST(req: Request) {
     if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".csv")) {
       text = buffer.toString("utf-8");
     } else if (name.endsWith(".pdf")) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require("pdf-parse");
-      const data = await pdfParse(buffer);
-      text = data.text;
+      text = extractPdfText(buffer);
     } else if (name.endsWith(".docx")) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mammoth = require("mammoth");
@@ -55,6 +52,66 @@ export async function POST(req: Request) {
     console.error("Upload error:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+function extractPdfText(buffer: Buffer): string {
+  // Extract text from PDF without pdfjs-dist (which needs browser APIs)
+  // This reads raw text streams from the PDF binary
+  const str = buffer.toString("latin1");
+  const texts: string[] = [];
+
+  // Method 1: Extract text between BT (Begin Text) and ET (End Text) operators
+  const btEtRegex = /BT\s([\s\S]*?)ET/g;
+  let match;
+  while ((match = btEtRegex.exec(str)) !== null) {
+    const block = match[1];
+    // Extract text from Tj and TJ operators
+    const tjMatches = block.match(/\(([^)]*)\)\s*Tj/g);
+    if (tjMatches) {
+      for (const tj of tjMatches) {
+        const textMatch = tj.match(/\(([^)]*)\)/);
+        if (textMatch) texts.push(textMatch[1]);
+      }
+    }
+    // TJ arrays: [(text) num (text) ...]
+    const tjArrayMatches = block.match(/\[(.*?)\]\s*TJ/g);
+    if (tjArrayMatches) {
+      for (const tja of tjArrayMatches) {
+        const parts = tja.match(/\(([^)]*)\)/g);
+        if (parts) {
+          texts.push(parts.map(p => p.slice(1, -1)).join(""));
+        }
+      }
+    }
+  }
+
+  // Method 2: Look for stream content with readable text
+  if (texts.length === 0) {
+    // Fallback: extract anything that looks like readable text
+    const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
+    while ((match = streamRegex.exec(str)) !== null) {
+      const content = match[1];
+      // Only keep streams that have enough readable ASCII
+      const readable = content.replace(/[^\x20-\x7E\n\r]/g, "");
+      if (readable.length > 20 && readable.length / content.length > 0.5) {
+        texts.push(readable.trim());
+      }
+    }
+  }
+
+  // Decode PDF escape sequences
+  let result = texts.join(" ")
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\");
+
+  // Clean up: remove excessive whitespace
+  result = result.replace(/\s+/g, " ").trim();
+
+  return result;
 }
 
 async function extractPptxText(buffer: Buffer): Promise<string> {

@@ -34,14 +34,20 @@ Wenn du eine Information nicht finden kannst, lass das Feld leer ("").`;
 
     // Try to parse JSON from response
     let profile;
+    // Clean control characters that break JSON parsing
+    const cleanJson = (s: string) => s.replace(/[\x00-\x1F\x7F]/g, (ch) => {
+      if (ch === "\n") return "\\n";
+      if (ch === "\r") return "\\r";
+      if (ch === "\t") return "\\t";
+      return "";
+    });
     try {
-      // Try direct parse
-      profile = JSON.parse(response);
+      profile = JSON.parse(cleanJson(response));
     } catch {
-      // Try to extract JSON from response
+      // Try to extract JSON block from response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        profile = JSON.parse(jsonMatch[0]);
+        profile = JSON.parse(cleanJson(jsonMatch[0]));
       } else {
         return NextResponse.json({ error: "Konnte Unternehmensdaten nicht extrahieren", raw: response }, { status: 500 });
       }
