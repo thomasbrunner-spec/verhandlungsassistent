@@ -1,10 +1,10 @@
 export const AVAILABLE_MODELS = [
-  { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", desc: "Schnellstes Modell, günstig (empfohlen)" },
+  { id: "claude-haiku-4-5", name: "Claude Haiku 4.5", desc: "Schnellstes Modell, günstig (empfohlen)" },
   { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", desc: "Schnell & leistungsstark" },
-  { id: "claude-opus-4-20250514", name: "Claude Opus 4", desc: "Stärkstes Modell, langsamer" },
+  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", desc: "Neuestes Modell, sehr leistungsstark" },
 ];
 
-export const DEFAULT_MODEL = "claude-3-5-haiku-20241022";
+export const DEFAULT_MODEL = "claude-haiku-4-5";
 
 const MAX_RETRIES = 3;
 
