@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
 
   try {
-    const { systemPrompt, userMessage, useKnowledge, model } = await req.json();
+    const { systemPrompt, userMessage, useKnowledge, model, useWebSearch } = await req.json();
     if (!systemPrompt || !userMessage) {
       return NextResponse.json({ error: "systemPrompt und userMessage erforderlich" }, { status: 400 });
     }
@@ -30,7 +30,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const response = await askAI(systemPrompt, userMessage, knowledgeBase, model || undefined);
+    const response = await askAI(
+      systemPrompt,
+      userMessage,
+      knowledgeBase,
+      model || undefined,
+      useWebSearch !== false // Standard: true, außer explizit false
+    );
     return NextResponse.json({ response });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "KI-Fehler";

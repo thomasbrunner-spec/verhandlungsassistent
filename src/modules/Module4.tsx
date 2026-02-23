@@ -38,6 +38,7 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
         signal: controller.signal,
         body: JSON.stringify({
           systemPrompt: PROMPTS.strategy.text,
+          useWebSearch: false, // Keine Web-Suche: alle Daten kommen aus Modul 1-3
           userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx || "k.A."}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Lieferantenanalyse:\n${supplierData.analysis}` : "Keine Analyse vorhanden."}\n\n=== LIFO-PROFIL DES GESPRÄCHSPARTNERS ===${lb}\n${lifoData.analysis ? `\nDetaillierte LIFO-Analyse:\n${lifoData.analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")}` : ""}\n\nErstelle ein VOLLSTÄNDIGES Verhandlungsdrehbuch mit detaillierter Agenda und wortwörtlichen Formulierungen. Beziehe dich auf ALLE oben genannten konkreten Daten.`,
         }),
       });

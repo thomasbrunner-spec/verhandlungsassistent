@@ -21,7 +21,7 @@ async function sleep(ms: number) {
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
-    // 4 Minuten Timeout pro Versuch (Sonnet + Web-Suche + lange Ausgaben brauchen Zeit)
+    // 4 Minuten Timeout pro Versuch
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 240000);
     let response: Response;
@@ -32,11 +32,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     }
 
     if (response.status === 429) {
-      // Rate limited - check retry-after header or use exponential backoff
       const retryAfter = response.headers.get("retry-after");
       const waitMs = retryAfter
         ? parseInt(retryAfter, 10) * 1000
-        : Math.min(1000 * Math.pow(2, attempt), 30000); // 1s, 2s, 4s... max 30s
+        : Math.min(1000 * Math.pow(2, attempt), 30000);
 
       if (attempt < retries) {
         console.log(`Rate limited (429). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
@@ -46,7 +45,6 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     }
 
     if (response.status === 529) {
-      // API overloaded
       const waitMs = Math.min(2000 * Math.pow(2, attempt), 30000);
       if (attempt < retries) {
         console.log(`API überlastet (529). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
@@ -61,7 +59,13 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
   throw new Error("Maximale Anzahl an Wiederholungsversuchen erreicht.");
 }
 
-export async function askAI(systemPrompt: string, userMessage: string, knowledgeBase: string = "", model: string = DEFAULT_MODEL) {
+export async function askAI(
+  systemPrompt: string,
+  userMessage: string,
+  knowledgeBase: string = "",
+  model: string = DEFAULT_MODEL,
+  useWebSearch: boolean = true
+) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY nicht konfiguriert");
 
@@ -71,6 +75,19 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
 
   const maxTokens = getMaxTokens(model);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body: Record<string, any> = {
+    model,
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: "user", content: userMessage }],
+  };
+
+  // Web-Suche nur wenn gewünscht (verlangsamt die Antwort erheblich)
+  if (useWebSearch) {
+    body.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }];
+  }
+
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -78,13 +95,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: "user", content: userMessage }],
-      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -97,9 +108,8 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
 
   const data = await response.json();
 
-  // Prüfe ob Output abgeschnitten wurde
   if (data.stop_reason === "max_tokens") {
-    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}). Ein stärkeres Modell verwenden.`);
+    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}).`);
   }
 
   return data.content
@@ -144,7 +154,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
   const data = await response.json();
 
   if (data.stop_reason === "max_tokens") {
-    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}). Ein stärkeres Modell verwenden.`);
+    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}).`);
   }
 
   return data.content
