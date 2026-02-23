@@ -9,7 +9,22 @@ export const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
 // Maximale Output-Tokens pro Modell
 function getMaxTokens(model: string): number {
   if (model.includes("haiku")) return 8192;
-  return 16384;
+  // Sonnet: Extended Output via Beta-Header erlaubt deutlich mehr
+  return 64000;
+}
+
+// Beta-Header für Extended Output (Sonnet-Modelle)
+function getHeaders(model: string, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-api-key": apiKey,
+    "anthropic-version": "2023-06-01",
+  };
+  // Extended Output Beta für Sonnet-Modelle aktivieren
+  if (!model.includes("haiku")) {
+    headers["anthropic-beta"] = "output-128k-2025-02-19";
+  }
+  return headers;
 }
 
 const MAX_RETRIES = 3;
@@ -86,11 +101,7 @@ export async function askAI(
 
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: getHeaders(model, apiKey),
     body: JSON.stringify(body),
   });
 
@@ -141,11 +152,7 @@ export async function askAIStream(
 
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: getHeaders(model, apiKey),
     body: JSON.stringify(body),
   });
 
@@ -172,11 +179,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
 
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: getHeaders(model, apiKey),
     body: JSON.stringify({
       model,
       max_tokens: maxTokens,
