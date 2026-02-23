@@ -63,7 +63,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4000,
+      max_tokens: 16000,
       system,
       messages: [{ role: "user", content: userMessage }],
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
@@ -102,7 +102,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4000,
+      max_tokens: 16000,
       system,
       messages,
     }),
