@@ -3,6 +3,9 @@ import { getSession } from "@/lib/auth";
 import { askAI } from "@/lib/ai";
 import { getDb } from "@/lib/db";
 
+// Längeres Timeout für Sonnet-Modelle mit ausführlichen Ausgaben
+export const maxDuration = 300; // 5 Minuten
+
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });

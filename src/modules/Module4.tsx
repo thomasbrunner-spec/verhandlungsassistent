@@ -30,14 +30,18 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
       : "";
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 300000); // 5 Min Timeout
       const r = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           systemPrompt: PROMPTS.strategy.text,
           userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx || "k.A."}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Lieferantenanalyse:\n${supplierData.analysis}` : "Keine Analyse vorhanden."}\n\n=== LIFO-PROFIL DES GESPRÄCHSPARTNERS ===${lb}\n${lifoData.analysis ? `\nDetaillierte LIFO-Analyse:\n${lifoData.analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")}` : ""}\n\nErstelle ein VOLLSTÄNDIGES Verhandlungsdrehbuch mit detaillierter Agenda und wortwörtlichen Formulierungen. Beziehe dich auf ALLE oben genannten konkreten Daten.`,
         }),
       });
+      clearTimeout(timeout);
       const d = await r.json();
       if (d.error) throw new Error(d.error);
       onStrategyChange(d.response);

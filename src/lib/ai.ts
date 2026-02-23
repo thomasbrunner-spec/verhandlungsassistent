@@ -21,7 +21,15 @@ async function sleep(ms: number) {
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const response = await fetch(url, options);
+    // 4 Minuten Timeout pro Versuch (Sonnet + Web-Suche + lange Ausgaben brauchen Zeit)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 240000);
+    let response: Response;
+    try {
+      response = await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (response.status === 429) {
       // Rate limited - check retry-after header or use exponential backoff
