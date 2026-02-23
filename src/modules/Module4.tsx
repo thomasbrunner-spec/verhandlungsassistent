@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Spinner, Btn, Markdown, LIFOBadge, ExportBar } from "@/components/UIKit";
 import { LIFO } from "@/data/lifo";
 import { PROMPTS } from "@/data/prompts";
@@ -16,9 +16,14 @@ interface Props {
 
 export default function Module4({ companyData, supplierData, lifoData, strategy, onStrategyChange }: Props) {
   const [loading, setLoading] = useState(false);
+  const [streamText, setStreamText] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const run = async () => {
     setLoading(true);
+    setStreamText("");
+    onStrategyChange("");
+
     const ctx = Object.entries(companyData)
       .filter(([, v]) => v?.trim())
       .map(([k, v]) => `${k}: ${v}`)
@@ -29,30 +34,86 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
       ? `\nLIFO-STIL: ${lifoStyle.name}\nMerkmale: ${lifoStyle.traits}\nAnsprache: ${lifoStyle.approach}\nDo's: ${lifoStyle.doList.join(", ")}\nDon'ts: ${lifoStyle.dontList.join(", ")}\nUnter Druck: ${lifoStyle.underPressure}`
       : "";
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 300000); // 5 Min Timeout
-      const r = await fetch("/api/ai", {
+      const r = await fetch("/api/ai-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           systemPrompt: PROMPTS.strategy.text,
-          useWebSearch: false, // Keine Web-Suche: alle Daten kommen aus Modul 1-3
+          useWebSearch: false,
           userMessage: `=== EIGENES UNTERNEHMEN ===\n${ctx || "k.A."}\n\n=== LIEFERANT: ${supplierData.name || "k.A."} ===\n${supplierData.analysis ? `Lieferantenanalyse:\n${supplierData.analysis}` : "Keine Analyse vorhanden."}\n\n=== LIFO-PROFIL DES GESPRÄCHSPARTNERS ===${lb}\n${lifoData.analysis ? `\nDetaillierte LIFO-Analyse:\n${lifoData.analysis.replace(/^\[(UH|BÜ|AH|BF)\]\s*/, "")}` : ""}\n\nErstelle ein VOLLSTÄNDIGES Verhandlungsdrehbuch mit detaillierter Agenda und wortwörtlichen Formulierungen. Beziehe dich auf ALLE oben genannten konkreten Daten.`,
         }),
       });
-      clearTimeout(timeout);
-      const d = await r.json();
-      if (d.error) throw new Error(d.error);
-      onStrategyChange(d.response);
+
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.error || "API-Fehler");
+      }
+
+      const reader = r.body?.getReader();
+      if (!reader) throw new Error("Kein Stream verfügbar");
+
+      const decoder = new TextDecoder();
+      let fullText = "";
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") continue;
+
+          try {
+            const event = JSON.parse(data);
+            if (event.text) {
+              fullText += event.text;
+              setStreamText(fullText);
+            }
+            if (event.error) {
+              throw new Error(event.error);
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) continue; // JSON parse error ignorieren
+            throw e;
+          }
+        }
+      }
+
+      onStrategyChange(fullText);
+      setStreamText("");
     } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        // Abgebrochen vom Nutzer
+        return;
+      }
       const msg = e instanceof Error ? e.message : "Fehler";
       onStrategyChange("Fehler: " + msg);
+      setStreamText("");
     }
     setLoading(false);
   };
 
+  const cancel = () => {
+    abortRef.current?.abort();
+    setLoading(false);
+    if (streamText) {
+      onStrategyChange(streamText + "\n\n---\n*[Generierung abgebrochen]*");
+      setStreamText("");
+    }
+  };
+
+  const displayText = streamText || strategy;
   const checks = [
     { l: "Unternehmensprofil", ok: Object.values(companyData).some((v) => v?.trim()) },
     { l: "Lieferantenanalyse", ok: !!supplierData.analysis },
@@ -112,14 +173,21 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
         )}
       </div>
 
-      <Btn onClick={run} disabled={loading}>
-        {loading ? "Wird erstellt..." : "Strategie generieren"}
-      </Btn>
-      {loading && <Spinner text="Erstellt Harvard-Strategie mit Agenda..." />}
-      {strategy && !loading && (
+      <div style={{ display: "flex", gap: "10px" }}>
+        <Btn onClick={run} disabled={loading}>
+          {loading ? "Wird erstellt..." : "Strategie generieren"}
+        </Btn>
+        {loading && (
+          <Btn onClick={cancel}>
+            Abbrechen
+          </Btn>
+        )}
+      </div>
+      {loading && <Spinner text="Erstellt Harvard-Strategie mit Agenda (Streaming)..." />}
+      {displayText && (
         <div style={{ marginTop: "20px", borderRadius: "10px", padding: "20px", background: C.bgCard, border: `1px solid ${C.border}` }}>
-          <Markdown text={strategy} />
-          <ExportBar text={strategy} title="Verhandlungsstrategie" />
+          <Markdown text={displayText} />
+          {!loading && <ExportBar text={displayText} title="Verhandlungsstrategie" />}
         </div>
       )}
     </div>

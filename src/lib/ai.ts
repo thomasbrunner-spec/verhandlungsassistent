@@ -9,7 +9,6 @@ export const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
 // Maximale Output-Tokens pro Modell
 function getMaxTokens(model: string): number {
   if (model.includes("haiku")) return 8192;
-  // Sonnet 4.5 und 4.6 unterstützen bis 16384 Output-Tokens
   return 16384;
 }
 
@@ -21,7 +20,6 @@ async function sleep(ms: number) {
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
-    // 4 Minuten Timeout pro Versuch
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 240000);
     let response: Response;
@@ -36,9 +34,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
       const waitMs = retryAfter
         ? parseInt(retryAfter, 10) * 1000
         : Math.min(1000 * Math.pow(2, attempt), 30000);
-
       if (attempt < retries) {
-        console.log(`Rate limited (429). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
+        console.log(`Rate limited (429). Warte ${waitMs / 1000}s...`);
         await sleep(waitMs);
         continue;
       }
@@ -47,7 +44,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     if (response.status === 529) {
       const waitMs = Math.min(2000 * Math.pow(2, attempt), 30000);
       if (attempt < retries) {
-        console.log(`API überlastet (529). Warte ${waitMs / 1000}s vor Versuch ${attempt + 2}/${retries + 1}...`);
+        console.log(`API überlastet (529). Warte ${waitMs / 1000}s...`);
         await sleep(waitMs);
         continue;
       }
@@ -83,7 +80,6 @@ export async function askAI(
     messages: [{ role: "user", content: userMessage }],
   };
 
-  // Web-Suche nur wenn gewünscht (verlangsamt die Antwort erheblich)
   if (useWebSearch) {
     body.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }];
   }
@@ -107,15 +103,61 @@ export async function askAI(
   }
 
   const data = await response.json();
-
-  if (data.stop_reason === "max_tokens") {
-    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}).`);
-  }
-
   return data.content
     .filter((b: { type: string }) => b.type === "text")
     .map((b: { text: string }) => b.text)
     .join("\n");
+}
+
+// Streaming-Version: Gibt einen ReadableStream zurück statt auf die komplette Antwort zu warten
+export async function askAIStream(
+  systemPrompt: string,
+  userMessage: string,
+  knowledgeBase: string = "",
+  model: string = DEFAULT_MODEL,
+  useWebSearch: boolean = false
+): Promise<Response> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY nicht konfiguriert");
+
+  const system = knowledgeBase
+    ? `${systemPrompt}\n\n<expertenwissen>\n${knowledgeBase}\n</expertenwissen>`
+    : systemPrompt;
+
+  const maxTokens = getMaxTokens(model);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body: Record<string, any> = {
+    model,
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: "user", content: userMessage }],
+    stream: true,
+  };
+
+  if (useWebSearch) {
+    body.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }];
+  }
+
+  const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    if (response.status === 429) {
+      throw new Error("Rate-Limit erreicht. Bitte warten Sie einen Moment und versuchen Sie es erneut.");
+    }
+    throw new Error(`API-Fehler: ${response.status} - ${err}`);
+  }
+
+  return response;
 }
 
 export async function askAIChat(systemPrompt: string, messages: { role: string; content: string }[], knowledgeBase: string = "", model: string = DEFAULT_MODEL) {
@@ -152,11 +194,6 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
   }
 
   const data = await response.json();
-
-  if (data.stop_reason === "max_tokens") {
-    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}).`);
-  }
-
   return data.content
     .filter((b: { type: string }) => b.type === "text")
     .map((b: { text: string }) => b.text)
