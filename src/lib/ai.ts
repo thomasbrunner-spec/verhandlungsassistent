@@ -1,10 +1,17 @@
 export const AVAILABLE_MODELS = [
-  { id: "claude-haiku-4-5", name: "Claude Haiku 4.5", desc: "Schnellstes Modell, günstig (empfohlen)" },
-  { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", desc: "Schnell & leistungsstark" },
-  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", desc: "Neuestes Modell, sehr leistungsstark" },
+  { id: "claude-haiku-4-5", name: "Claude Haiku 4.5", desc: "Schnell & günstig (kurze Ausgaben)" },
+  { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", desc: "Leistungsstark, lange Ausgaben möglich" },
+  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", desc: "Neuestes Modell, sehr leistungsstark (empfohlen)" },
 ];
 
-export const DEFAULT_MODEL = "claude-haiku-4-5";
+export const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
+
+// Maximale Output-Tokens pro Modell
+function getMaxTokens(model: string): number {
+  if (model.includes("haiku")) return 8192;
+  // Sonnet 4.5 und 4.6 unterstützen bis 16384 Output-Tokens
+  return 16384;
+}
 
 const MAX_RETRIES = 3;
 
@@ -54,6 +61,8 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
     ? `${systemPrompt}\n\n<expertenwissen>\n${knowledgeBase}\n</expertenwissen>`
     : systemPrompt;
 
+  const maxTokens = getMaxTokens(model);
+
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -63,7 +72,7 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
     },
     body: JSON.stringify({
       model,
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: "user", content: userMessage }],
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
@@ -79,6 +88,12 @@ export async function askAI(systemPrompt: string, userMessage: string, knowledge
   }
 
   const data = await response.json();
+
+  // Prüfe ob Output abgeschnitten wurde
+  if (data.stop_reason === "max_tokens") {
+    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}). Ein stärkeres Modell verwenden.`);
+  }
+
   return data.content
     .filter((b: { type: string }) => b.type === "text")
     .map((b: { text: string }) => b.text)
@@ -93,6 +108,8 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
     ? `${systemPrompt}\n\n<expertenwissen>\n${knowledgeBase}\n</expertenwissen>`
     : systemPrompt;
 
+  const maxTokens = getMaxTokens(model);
+
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -102,7 +119,7 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
     },
     body: JSON.stringify({
       model,
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       system,
       messages,
     }),
@@ -117,6 +134,11 @@ export async function askAIChat(systemPrompt: string, messages: { role: string; 
   }
 
   const data = await response.json();
+
+  if (data.stop_reason === "max_tokens") {
+    console.warn(`Output wurde bei ${maxTokens} Tokens abgeschnitten (Modell: ${model}). Ein stärkeres Modell verwenden.`);
+  }
+
   return data.content
     .filter((b: { type: string }) => b.type === "text")
     .map((b: { text: string }) => b.text)

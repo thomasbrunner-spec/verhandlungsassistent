@@ -40,7 +40,7 @@ export default function Home() {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [kb, setKb] = useState("");
-  const [selectedModel, setSelectedModel] = useState("claude-haiku-4-5");
+  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-5-20250929");
   const [cd, setCd] = useState<Record<string, string>>({});
   const [sd, setSd] = useState<{ name: string; industry: string; analysis: string }>({ name: "", industry: "", analysis: "" });
   const [lfd, setLfd] = useState<{ behaviors: string; analysis: string; style: string }>({ behaviors: "", analysis: "", style: "" });
