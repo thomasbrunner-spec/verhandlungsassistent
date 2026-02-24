@@ -29,9 +29,10 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
       .map(([k, v]) => `${k}: ${v}`)
       .join("\n");
 
-    const lifoStyle = lifoData.style && LIFO[lifoData.style];
-    const lb = lifoStyle
-      ? `\nLIFO-STIL: ${lifoStyle.name}\nMerkmale: ${lifoStyle.traits}\nAnsprache: ${lifoStyle.approach}\nDo's: ${lifoStyle.doList.join(", ")}\nDon'ts: ${lifoStyle.dontList.join(", ")}\nUnter Druck: ${lifoStyle.underPressure}`
+    const detectedStyle = lifoData.style || (lifoData.analysis?.match(/^\[(UH|BÜ|AH|BF)\]/)?.[1] ?? "");
+    const lifoInfo = detectedStyle && LIFO[detectedStyle];
+    const lb = lifoInfo
+      ? `\nLIFO-STIL: ${lifoInfo.name}\nMerkmale: ${lifoInfo.traits}\nAnsprache: ${lifoInfo.approach}\nDo's: ${lifoInfo.doList.join(", ")}\nDon'ts: ${lifoInfo.dontList.join(", ")}\nUnter Druck: ${lifoInfo.underPressure}`
       : "";
 
     const controller = new AbortController();
@@ -114,10 +115,14 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
   };
 
   const displayText = streamText || strategy;
+
+  // LIFO-Stil: Entweder direkt aus style oder aus der Analyse extrahieren
+  const lifoStyle = lifoData.style || (lifoData.analysis?.match(/^\[(UH|BÜ|AH|BF)\]/)?.[1] ?? "");
+
   const checks = [
     { l: "Unternehmensprofil", ok: Object.values(companyData).some((v) => v?.trim()) },
     { l: "Lieferantenanalyse", ok: !!supplierData.analysis },
-    { l: "LIFO-Analyse", ok: !!lifoData.style },
+    { l: "LIFO-Analyse", ok: !!lifoStyle || !!lifoData.analysis },
   ];
 
   return (
@@ -166,9 +171,9 @@ export default function Module4({ companyData, supplierData, lifoData, strategy,
             </span>
           ))}
         </div>
-        {lifoData.style && (
+        {lifoStyle && (
           <div style={{ marginTop: "10px" }}>
-            <LIFOBadge style={lifoData.style} />
+            <LIFOBadge style={lifoStyle} />
           </div>
         )}
       </div>
