@@ -11,8 +11,9 @@ import Module4 from "@/modules/Module4";
 import Module5 from "@/modules/Module5";
 import Module6 from "@/modules/Module6";
 import Module7 from "@/modules/Module7";
+import AdminPanel from "@/components/AdminPanel";
 
-interface User { userId: string; email: string; name: string; }
+interface User { userId: string; email: string; name: string; isAdmin?: boolean; }
 interface Project { id: string; name: string; }
 
 const MODS = [
@@ -46,6 +47,7 @@ export default function Home() {
   const [lfd, setLfd] = useState<{ behaviors: string; analysis: string; style: string }>({ behaviors: "", analysis: "", style: "" });
   const [strat, setStrat] = useState("");
   const [obj, setObj] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
@@ -176,7 +178,10 @@ export default function Home() {
           <div style={{ marginTop: 28, paddingTop: 18, borderTop: `1px solid ${C.border}` }}>
             <p style={{ fontSize: 13, color: C.textMuted, margin: "0 0 4px" }}>{user.name}</p>
             <p style={{ fontSize: 11, color: C.textDim, margin: "0 0 14px" }}>{user.email}</p>
-            <button onClick={logout} style={{ width: "100%", padding: "10px 0", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "transparent", border: `1px solid ${C.borderLight}`, color: C.textDim, fontFamily: "inherit" }}>Abmelden</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={logout} style={{ flex: 1, padding: "10px 0", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "transparent", border: `1px solid ${C.borderLight}`, color: C.textDim, fontFamily: "inherit" }}>Abmelden</button>
+              <button onClick={() => setShowAdmin(!showAdmin)} style={{ padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: showAdmin ? C.accentBg : "transparent", border: `1px solid ${showAdmin ? C.accent : C.borderLight}`, color: showAdmin ? C.accent : C.textDim, fontFamily: "inherit" }}>👑</button>
+            </div>
           </div>
         </div>
       </div>
@@ -194,7 +199,9 @@ export default function Home() {
 
         {/* Content */}
         <div style={{ flex: 1, padding: 28, overflowY: "auto", maxWidth: 860 }}>
-          {!activeProject && m > 1 ? (
+          {showAdmin ? (
+            <AdminPanel currentEmail={user.email} />
+          ) : !activeProject && m > 1 ? (
             <div style={{ background: C.bgCard, border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: 32, textAlign: "center" }}>
               <p style={{ fontSize: 36, marginBottom: 12 }}>📁</p>
               <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 16 }}>Bitte erstellen oder wählen Sie ein Verhandlungsprojekt.</p>

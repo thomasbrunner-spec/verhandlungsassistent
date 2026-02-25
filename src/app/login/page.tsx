@@ -4,11 +4,34 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { C } from "@/data/colors";
 
+const inputStyle = {
+  width: "100%",
+  paddingLeft: "14px",
+  paddingRight: "14px",
+  paddingTop: "10px",
+  paddingBottom: "10px",
+  borderRadius: "8px",
+  fontSize: "13px",
+  outline: "none",
+  background: C.bgInput,
+  border: `1px solid ${C.border}`,
+  color: C.textPrimary,
+};
+
+const labelStyle = {
+  display: "block" as const,
+  fontSize: "12px",
+  fontWeight: "500" as const,
+  marginBottom: "6px",
+  color: C.textSecondary,
+};
+
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [registrationCode, setRegistrationCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -19,7 +42,9 @@ export default function LoginPage() {
     setLoading(true);
 
     const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
-    const body = isRegister ? { email, password, name } : { email, password };
+    const body = isRegister
+      ? { email, password, name, registrationCode }
+      : { email, password };
 
     try {
       const r = await fetch(endpoint, {
@@ -87,74 +112,51 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           {isRegister && (
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "500", marginBottom: "6px", color: C.textSecondary }}>Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  paddingLeft: "14px",
-                  paddingRight: "14px",
-                  paddingTop: "10px",
-                  paddingBottom: "10px",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  outline: "none",
-                  background: C.bgInput,
-                  border: `1px solid ${C.border}`,
-                  color: C.textPrimary
-                }}
-                placeholder="Ihr Name"
-              />
-            </div>
+            <>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={labelStyle}>Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  style={inputStyle}
+                  placeholder="Ihr Name"
+                />
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={labelStyle}>Registrierungscode</label>
+                <input
+                  type="text"
+                  value={registrationCode}
+                  onChange={(e) => setRegistrationCode(e.target.value)}
+                  required
+                  style={inputStyle}
+                  placeholder="Code vom Administrator"
+                />
+              </div>
+            </>
           )}
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "500", marginBottom: "6px", color: C.textSecondary }}>E-Mail</label>
+            <label style={labelStyle}>E-Mail</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                paddingLeft: "14px",
-                paddingRight: "14px",
-                paddingTop: "10px",
-                paddingBottom: "10px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                outline: "none",
-                background: C.bgInput,
-                border: `1px solid ${C.border}`,
-                color: C.textPrimary
-              }}
+              style={inputStyle}
               placeholder="name@firma.de"
             />
           </div>
           <div style={{ marginBottom: "24px" }}>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "500", marginBottom: "6px", color: C.textSecondary }}>Passwort</label>
+            <label style={labelStyle}>Passwort</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              style={{
-                width: "100%",
-                paddingLeft: "14px",
-                paddingRight: "14px",
-                paddingTop: "10px",
-                paddingBottom: "10px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                outline: "none",
-                background: C.bgInput,
-                border: `1px solid ${C.border}`,
-                color: C.textPrimary
-              }}
+              style={inputStyle}
               placeholder="Mindestens 6 Zeichen"
             />
           </div>

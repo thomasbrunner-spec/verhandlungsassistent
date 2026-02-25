@@ -4,10 +4,19 @@ import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, registrationCode } = await req.json();
     if (!email || !password || !name) {
       return NextResponse.json({ error: "Alle Felder erforderlich" }, { status: 400 });
     }
+
+    // Registrierungscode prüfen (falls in Umgebungsvariable gesetzt)
+    const requiredCode = process.env.REGISTRATION_CODE;
+    if (requiredCode) {
+      if (!registrationCode || registrationCode.trim() !== requiredCode.trim()) {
+        return NextResponse.json({ error: "Ungültiger Registrierungscode" }, { status: 403 });
+      }
+    }
+
     const { sessionId, user } = await register(email, password, name);
     const cookieStore = await cookies();
     cookieStore.set("session", sessionId, {
